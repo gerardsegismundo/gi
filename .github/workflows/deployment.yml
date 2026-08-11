@@ -25,17 +25,22 @@ jobs:
         run: npm ci
       - name: Build Project
         run: npm run build
-      - name: Upload build artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: build-artifacts
-          path: |
-            dist
-            package.json
+          path: dist
+          # path: |
+          #   dist
+          #   package.json
   deploy:
     needs: test
     runs-on: ubuntu-latest
     steps:
+      - name: Get build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
       - name: Get code
         uses: actions/checkout@v4
       - name: Install Node.js
