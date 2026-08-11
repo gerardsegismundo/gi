@@ -5,6 +5,15 @@ on:
       - opened
       - closed
   workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'dev-*'
+      - 'feat/**'
+    paths:
+      - '.github/workflows/output.yml'
+    paths-ignore:
+      - 'README.md'
 jobs:
   info:
     runs-on: ubuntu-22.04
