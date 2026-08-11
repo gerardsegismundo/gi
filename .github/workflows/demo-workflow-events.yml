@@ -1,5 +1,9 @@
 name: Output information
-on: workflow_dispatch
+on:
+  pull_request:
+    types:
+      - opened
+  workflow_dispatch:
 jobs:
   info:
     runs-on: ubuntu-22.04
