@@ -7,6 +7,11 @@ jobs:
     steps:
       - name: Get code
         uses: actions/checkout@v4
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
@@ -18,29 +23,45 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
+    outputs:
+      script-file: ${{ steps.publish.outputs.script-file }}
     steps:
       - name: Get code
         uses: actions/checkout@v4
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: Build Project
         run: npm run build
+      - name: Publish JS filename
+        id: publish
+        run:
+          find dist/assets/*.js -exec basename {} \; | head -1 | sed 's/.js$//' | awk '{print "script-file=" $0}' >> $GITHUB_OUTPUT
+          # find dist/assets/*.js -type f -execdir echo 'script-file={}' >> $GITHUB_OUTPUT ';'
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: build-artifacts
+          name: dist-files
           path: dist
           # path: |
           #   dist
           #   package.json
   deploy:
-    needs: test
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Get build artifacts
         uses: actions/download-artifact@v3
         with:
-          name: build-artifacts
+          name: dist-files
+      - name: Output contents
+        run: ls -la dist
+      - name: Output filename
+        run: echo "${{ needs.build.outputs.script-file }}"
       - name: Get code
         uses: actions/checkout@v4
       - name: Install Node.js
