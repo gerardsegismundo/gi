@@ -1,0 +1,46 @@
+name: Reusable Build Workflow
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: string
+        default: dev
+      node-version:
+        description: Node.js version to use
+        required: false
+        type: string
+        default: '18'
+    secrets:
+      api-token:
+        description: Token used by the workflow
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.status.outputs.result }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build app
+        run: npm run build
+
+      - name: Set status
+        id: status
+        run: echo "result=success for ${{ inputs.environment }}" >> "$GITHUB_OUTPUT"
+
+      - name: Show environment
+        run: echo "Deploying to ${{ inputs.environment }}"
