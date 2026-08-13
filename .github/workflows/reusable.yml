@@ -17,12 +17,13 @@ on:
       api-token:
         description: Token used by the workflow
         required: false
+      deploy-key:
+        description: Optional deployment key
+        required: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      result: ${{ steps.status.outputs.result }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,9 +39,11 @@ jobs:
       - name: Build app
         run: npm run build
 
-      - name: Set status
-        id: status
-        run: echo "result=success for ${{ inputs.environment }}" >> "$GITHUB_OUTPUT"
-
-      - name: Show environment
-        run: echo "Deploying to ${{ inputs.environment }}"
+      - name: Use secrets
+        env:
+          API_TOKEN: ${{ secrets.api-token }}
+          DEPLOY_KEY: ${{ secrets.deploy-key }}
+        run: |
+          echo "Environment: ${{ inputs.environment }}"
+          echo "API token is set: ${API_TOKEN:+yes}"
+          echo "Deploy key is set: ${DEPLOY_KEY:+yes}"
