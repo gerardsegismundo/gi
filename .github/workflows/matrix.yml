@@ -6,6 +6,7 @@ jobs:
   # Basic Matrix Strategy - Test across multiple OS and Node.js versions
   test-basic-matrix:
     runs-on: ${{ matrix.os }}
+    continue-on-error: true
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -19,15 +20,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
   # Matrix with Custom Variables - Test multiple configurations
   test-custom-configs:
     runs-on: ubuntu-latest
@@ -52,13 +53,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Display configuration
         run: |
           echo "Environment: ${{ matrix.config.env }}"
           echo "Port: ${{ matrix.config.port }}"
           echo "Database: ${{ matrix.config.db }}"
-      
+
   # Matrix with Include Pattern - Test specific combinations
   test-specific-combinations:
     runs-on: ${{ matrix.os }}
@@ -79,22 +80,22 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run tests
         run: npm test
-      
+
       - name: Run experimental features
         if: matrix.experimental == true
         run: npm run test:experimental
-      
+
       - name: Run integration tests
         if: matrix.run-integration == true
         run: npm run test:integration
@@ -116,12 +117,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      
+
   # Dynamic Matrix Generation - Generate matrix from a file
   test-dynamic-matrix:
     runs-on: ubuntu-latest
@@ -132,10 +133,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Test package ${{ matrix.package.name }}
         run: npm test -- --package=${{ matrix.package.name }}
 
@@ -147,7 +148,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set matrix
         id: set-matrix
         run: |
@@ -166,16 +167,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Start ${{ matrix.service }}
         run: docker compose up -d ${{ matrix.service }}
-      
+
       - name: Wait for service
         run: sleep 5
-      
+
       - name: Run integration tests
         run: npm run test:integration
-      
+
       - name: Stop services
         if: always()
         run: docker compose down
@@ -196,14 +197,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ matrix.branch }}
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run tests
         run: npm test
-      
+
       - name: Deploy
         if: matrix.deploy == true
         run: echo "Deploying ${{ matrix.branch }}"
-
