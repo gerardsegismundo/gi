@@ -1,0 +1,209 @@
+name: Matrix Strategy Example
+
+on: [push, workflow_dispatch]
+
+jobs:
+  # Basic Matrix Strategy - Test across multiple OS and Node.js versions
+  test-basic-matrix:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [16, 18, 20]
+        exclude:
+          - os: macos-latest
+            node-version: 16
+        include:
+          - os: ubuntu-latest
+            node-version: 21
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      
+      - name: Install dependencies
+        run: npm ci
+      
+  # Matrix with Custom Variables - Test multiple configurations
+  test-custom-configs:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config:
+          - env: development
+            port: 3000
+            db: postgres
+          - env: production
+            port: 8080
+            db: mysql
+          - env: staging
+            port: 4000
+            db: mongodb
+        fail-fast: false
+        max-parallel: 2
+    env:
+      NODE_ENV: ${{ matrix.config.env }}
+      PORT: ${{ matrix.config.port }}
+      DATABASE: ${{ matrix.config.db }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Display configuration
+        run: |
+          echo "Environment: ${{ matrix.config.env }}"
+          echo "Port: ${{ matrix.config.port }}"
+          echo "Database: ${{ matrix.config.db }}"
+      
+  # Matrix with Include Pattern - Test specific combinations
+  test-specific-combinations:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [16, 18, 20]
+        include:
+          - os: ubuntu-latest
+            node-version: 21
+            experimental: true
+          - os: windows-latest
+            node-version: 18
+            run-integration: true
+        exclude:
+          - os: windows-latest
+            node-version: 16
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Run experimental features
+        if: matrix.experimental == true
+        run: npm run test:experimental
+      
+      - name: Run integration tests
+        if: matrix.run-integration == true
+        run: npm run test:integration
+
+  # Matrix with Continue on Error - Allow some failures
+  test-experimental-features:
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      matrix:
+        node-version: [16, 18, 20, 21]
+        experimental: [false, true]
+        include:
+          - node-version: 21
+            experimental: true
+        exclude:
+          - node-version: [16, 18, 20]
+            experimental: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      
+  # Dynamic Matrix Generation - Generate matrix from a file
+  test-dynamic-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: ${{ fromJson(needs.generate.outputs.matrix) }}
+    needs: generate
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Test package ${{ matrix.package.name }}
+        run: npm test -- --package=${{ matrix.package.name }}
+
+  # Helper job to generate dynamic matrix
+  generate:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          echo "matrix=[{\"name\":\"core\"},{\"name\":\"utils\"},{\"name\":\"api\"},{\"name\":\"ui\"}]" >> $GITHUB_OUTPUT
+
+  # Matrix with Docker - Test across different service versions
+  test-docker-compose:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - redis:6
+          - redis:7
+          - postgres:14
+          - postgres:15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Start ${{ matrix.service }}
+        run: docker compose up -d ${{ matrix.service }}
+      
+      - name: Wait for service
+        run: sleep 5
+      
+      - name: Run integration tests
+        run: npm run test:integration
+      
+      - name: Stop services
+        if: always()
+        run: docker compose down
+
+  # Matrix with Branches - Test across multiple branches
+  test-branches:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branch: [main, develop, feature/test]
+        include:
+          - branch: main
+            deploy: true
+          - branch: develop
+            deploy: false
+    steps:
+      - name: Checkout ${{ matrix.branch }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Deploy
+        if: matrix.deploy == true
+        run: echo "Deploying ${{ matrix.branch }}"
+
