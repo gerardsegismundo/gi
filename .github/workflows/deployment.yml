@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: '18'
       - name: Install dependencies
-        if: steps.cache-deps.outputs.cache-hit != 'true'
+        if: steps['cache-deps'].outputs.cache-hit != 'true'
         run: npm ci
       - name: Run linter
         run: npm run lint

@@ -20,10 +20,20 @@ on:
       deploy-key:
         description: Optional deployment key
         required: false
+    outputs:
+      build-status:
+        description: Result of the build
+        value: ${{ jobs.build.outputs.build-status }}
+      environment-name:
+        description: Environment used
+        value: ${{ jobs.build.outputs.environment-name }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      build-status: ${{ steps.status.outputs.build-status }}
+      environment-name: ${{ steps.status.outputs.environment-name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -47,3 +57,9 @@ jobs:
           echo "Environment: ${{ inputs.environment }}"
           echo "API token is set: ${API_TOKEN:+yes}"
           echo "Deploy key is set: ${DEPLOY_KEY:+yes}"
+
+      - name: Set outputs
+        id: status
+        run: |
+          echo "build-status=success" >> "$GITHUB_OUTPUT"
+          echo "environment-name=${{ inputs.environment }}" >> "$GITHUB_OUTPUT"
